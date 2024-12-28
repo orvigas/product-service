@@ -1,4 +1,5 @@
 # Spring Boot 3.4.* product-service
+###### Author: Orlando Villegas 2024
 This tutorial is about a Spring Boot 3.4.* based microservice. This time, we are going to create a simple "CRUD" microservice that will allow us to manage a database "product" table upon a Rest Controller that will contain Create, Read, Update, and Delete endpoints. We will also add a List operation with pagination, sorting, and filtering features.
 ## Concept definitions
 Before starting, we need to define a few concepts to have a clear background about the things that we will work on within this project.
@@ -125,3 +126,191 @@ Run the application again, connect to the H2 DB console, you should see a new ta
          alt="H2 Console with data loaded from 'data.sql'">
     <figcaption>After run the query you will see a result list with the data inserted in the database.</figcaption>
 </figure>
+
+## Microservice structure
+The structure of a __Spring Boot microservice__ typically follows a modular and layered architecture, focusing on scalability, maintainability, and separation of concerns. The key components include:
+
+1. __Controller Layer:__ Handles incoming HTTP requests, routes them to the appropriate service, and returns responses (annotated with @RestController).
+
+2. __Service Layer:__ Contains business logic and acts as an intermediary between the controller and repository layers (annotated with @Service).
+
+3. __Repository Layer:__ Manages data persistence, providing CRUD operations and database interactions (annotated with @Repository).
+
+4. __Model:__ Represents the application's domain data, often mapped to database tables using JPA annotations like @Entity.
+
+5. __Configuration:__ Handles application-specific configurations, such as database connections, security, and external integrations (e.g., application.yml or application.properties).
+
+6. __API Gateway (Optional):__ Manages routing, load balancing, and authentication for multiple microservices.
+
+7. __External Communication:__ Utilizes REST APIs, messaging systems (like RabbitMQ or Kafka), or service discovery (like Eureka) to interact with other microservices.
+
+Each microservice is self-contained, has its own database (in a typical design), and communicates with others via lightweight protocols like HTTP or messaging.
+
+### Model
+In Spring Boot, a model is a class that represents the application's data or domain objects. It is typically used to encapsulate data that will be processed, stored, or transferred between different layers of the application (e.g., Controller, Service, and Repository).
+
+Key features of a Spring Boot model:
+
+- Contains fields that represent the attributes of the data.
+- May include getters, setters, constructors, and other utility methods.
+- Often annotated with JPA annotations (e.g., @Entity, @Table, @Id) if it maps to a database table.
+
+Models are central to defining the structure of data and facilitating communication within the application.
+#### Product.java
+We need to create our model which will contain our database table representation in java in this path `src/main/java/com/example/product/model/Product.java`.
+```java
+package com.example.product.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Data
+@Entity
+@Table(name = "products")
+public class Product {
+    @Id
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private long id;
+    @Column(name = "sku", unique = true)
+    private String sku;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @Column(name = "price")
+    private double price;
+    @Column(name = "tax_rate")
+    private double taxRate;
+}
+```
+Now we can remove some configurations because the table creation process will be handled by the spring boot lifecycle and this configuration is no longer needed. In the `data.sql` we will comment the following:
+```sql
+--DROP TABLE if EXISTS products CASCADE;
+--DROP sequence if EXISTS products_seq;
+--CREATE sequence products_seq start WITH 1 increment by 50;
+--CREATE TABLE products (price float(53), tax_rate float(53), id bigint NOT NULL, description varchar(255), name varchar(255), sku varchar(255) UNIQUE, PRIMARY KEY (id));
+```
+### Controller
+A __Spring Boot Controller__ is a component in a Spring Boot application that handles incoming HTTP requests and defines the application's routing and request handling logic. It is typically annotated with @Controller or @RestController.
+
+- __@Controller__: Used for traditional web applications, returning view templates like HTML.
+- __@RestController__: A specialization of @Controller that combines @Controller and @ResponseBody, directly returning __JSON__ or __XML__ responses.
+
+Controllers process user requests, invoke business logic (usually via services), and return responses to the client.
+
+#### ProductController.java
+We need to create a new file inside a new package called "controller", this results in something like this. `src/main/java/com/example/product/controller/ProductController.java`.
+This si the first content of that file:
+```java
+package com.example.product.controller;
+
+public class ProductController {
+}
+```
+After this point we need to add some __Spring Boot annotations__ to add the controller behavior this newly created class as follows
+```java
+package com.example.product.controller;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(path = "/v1/product")
+public class ProductController {
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public String read(){
+        return "It works!";
+    }
+}
+```
+Run your application again and test this url `http://localhost:8080/v1/product`, we should get something like this
+<figure>
+    <img src="/readme-assets/first-controller.png"
+         alt="GET Request response">
+    <figcaption>Response from the controller.</figcaption>
+</figure>
+
+If our controller was able to show us the result, we are now ready to add the missing methods to complete the structure of a CRUD + L list function.
+
+#### Controller with the Model
+Now our controller should be like this:
+```java
+package com.example.product.controller;
+
+import com.example.product.model.Product;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@Validated
+@RequestMapping(path = "/v1/product")
+public class ProductController {
+
+    @GetMapping(path = "/list")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<List<Product>> list() {
+        return ResponseEntity.ok(List.of(new Product()));
+    }
+
+    @GetMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<Product> read(@PathVariable(required = true) long id) {
+        return ResponseEntity.ok(new Product());
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Product> create(@RequestBody(required = true) @NonNull @Valid Product product) {
+        return ResponseEntity.ok(new Product());
+    }
+
+    @PutMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<Product> update(@PathVariable(required = true) long id, @RequestBody(required = true) Product product) {
+        return ResponseEntity.ok(new Product());
+    }
+
+    @DeleteMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> delete(@PathVariable(required = true) long id) {
+        return ResponseEntity.noContent().build();
+    }
+
+}
+
+```
+To reinforce the knowledge about them and add them to the endless tools that Java and Spring Boot provide us to build robust and efficient applications.
+This a list of the most important ones
+- Spring Web
+  - `@RequestMapping`
+  - `@GetMapping`
+  - `@PostMapping`
+  - `@PutMapping`
+  - `@DeleteMapping`
+  - `@ResponseStatus`
+  - `@PathVariable`
+- Spring Data
+  - `@Entity`
+  - `@Table`
+  - `@Id`
+  - `@Column`
+  - `@GeneratedValue`
+- Lombok
+  - `@Data`
