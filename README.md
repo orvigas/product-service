@@ -157,9 +157,10 @@ Key features of a Spring Boot model:
 
 Models are central to defining the structure of data and facilitating communication within the application.
 #### Product.java
-We need to create our model which will contain our database table representation in java in this path `src/main/java/com/example/product/model/Product.java`.
+We need to create our model which will contain our database table representation in java in this path `src/main/java/com/example/product/models/Product.java`.
+
 ```java
-package com.example.product.model;
+package com.example.product.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -173,20 +174,20 @@ import lombok.Data;
 @Entity
 @Table(name = "products")
 public class Product {
-    @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
-    @Column(name = "sku", unique = true)
-    private String sku;
-    @Column(name = "name")
-    private String name;
-    @Column(name = "description")
-    private String description;
-    @Column(name = "price")
-    private double price;
-    @Column(name = "tax_rate")
-    private double taxRate;
+  @Id
+  @Column(name = "id")
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private long id;
+  @Column(name = "sku", unique = true)
+  private String sku;
+  @Column(name = "name")
+  private String name;
+  @Column(name = "description")
+  private String description;
+  @Column(name = "price")
+  private double price;
+  @Column(name = "tax_rate")
+  private double taxRate;
 }
 ```
 Now we can remove some configurations because the table creation process will be handled by the spring boot lifecycle and this configuration is no longer needed. In the `data.sql` we will comment the following:
@@ -205,17 +206,19 @@ A __Spring Boot Controller__ is a component in a Spring Boot application that ha
 Controllers process user requests, invoke business logic (usually via services), and return responses to the client.
 
 #### ProductController.java
-We need to create a new file inside a new package called "controller", this results in something like this. `src/main/java/com/example/product/controller/ProductController.java`.
+We need to create a new file inside a new package called "controllers", this results in something like this. `src/main/java/com/example/product/controllers/ProductController.java`.
 This si the first content of that file:
+
 ```java
-package com.example.product.controller;
+package com.example.product.controllers;
 
 public class ProductController {
 }
 ```
 After this point we need to add some __Spring Boot annotations__ to add the controller behavior this newly created class as follows
+
 ```java
-package com.example.product.controller;
+package com.example.product.controllers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -227,11 +230,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/v1/product")
 public class ProductController {
 
-    @GetMapping
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public String read(){
-        return "It works!";
-    }
+  @GetMapping
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public String read() {
+    return "It works!";
+  }
 }
 ```
 Run your application again and test this url `http://localhost:8080/v1/product`, we should get something like this
@@ -245,10 +248,11 @@ If our controller was able to show us the result, we are now ready to add the mi
 
 #### Controller with the Model
 Now our controller should be like this:
-```java
-package com.example.product.controller;
 
-import com.example.product.model.Product;
+```java
+package com.example.product.controllers;
+
+import com.example.product.models.Product;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -263,35 +267,35 @@ import java.util.List;
 @RequestMapping(path = "/v1/product")
 public class ProductController {
 
-    @GetMapping(path = "/list")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<List<Product>> list() {
-        return ResponseEntity.ok(List.of(new Product()));
-    }
+  @GetMapping(path = "/list")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public ResponseEntity<List<Product>> list() {
+    return ResponseEntity.ok(List.of(new Product()));
+  }
 
-    @GetMapping(path = "/{id}")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Product> read(@PathVariable(required = true) long id) {
-        return ResponseEntity.ok(new Product());
-    }
+  @GetMapping(path = "/{id}")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public ResponseEntity<Product> read(@PathVariable(required = true) long id) {
+    return ResponseEntity.ok(new Product());
+  }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Product> create(@RequestBody(required = true) @NonNull @Valid Product product) {
-        return ResponseEntity.ok(new Product());
-    }
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public ResponseEntity<Product> create(@RequestBody(required = true) @NonNull @Valid Product product) {
+    return ResponseEntity.ok(new Product());
+  }
 
-    @PutMapping(path = "/{id}")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Product> update(@PathVariable(required = true) long id, @RequestBody(required = true) Product product) {
-        return ResponseEntity.ok(new Product());
-    }
+  @PutMapping(path = "/{id}")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public ResponseEntity<Product> update(@PathVariable(required = true) long id, @RequestBody(required = true) Product product) {
+    return ResponseEntity.ok(new Product());
+  }
 
-    @DeleteMapping(path = "/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public ResponseEntity<Void> delete(@PathVariable(required = true) long id) {
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping(path = "/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public ResponseEntity<Void> delete(@PathVariable(required = true) long id) {
+    return ResponseEntity.noContent().build();
+  }
 
 }
 
@@ -318,11 +322,13 @@ This a list of the most important ones
 ### Service
 In an application, the business logic resides within the service layer so we use the __@Service Annotation__ to indicate that a class belongs to that layer. It is also a specialization of __@Component Annotation__ like the __@Repository Annotation__. One most important thing about the __@Service Annotation__ is it can be applied only to classes. It is used to mark the class as a service provider. So overall __@Service annotation__ is used with classes that provide some business functionalities.
 #### ProductService.java
+We need to create a new file inside a new package called "services", this results in something like this. `src/main/java/com/example/product/services/ProductService.java`.
 Now our service should be like this:
-```java
-package com.example.product.service;
 
-import com.example.product.model.Product;
+```java
+package com.example.product.services;
+
+import com.example.product.models.Product;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -330,25 +336,25 @@ import java.util.List;
 @Service
 public class ProductService {
 
-    public List<Product> all() {
-        return List.of(new Product());
-    }
+  public List<Product> all() {
+    return List.of(new Product());
+  }
 
-    public Product get(final long id) {
-        return new Product();
-    }
+  public Product get(final long id) {
+    return new Product();
+  }
 
-    public Product save(final Product product) {
-        return new Product();
-    }
+  public Product save(final Product product) {
+    return new Product();
+  }
 
-    public Product update(final long id, final Product product) {
-        return new Product();
-    }
+  public Product update(final long id, final Product product) {
+    return new Product();
+  }
 
-    public void delete(final long id) {
+  public void delete(final long id) {
 
-    }
+  }
 }
 ```
 Now we need to change a couple of things in our `ProductController.java` file.
@@ -359,7 +365,7 @@ Now we need to change a couple of things in our `ProductController.java` file.
 public class ProductController {
 
     @Autowired
-    private ProductService productService;//We need to inject the service
+    private ProductService productService;//We need to inject the services
   //...
 }
 ```
@@ -372,18 +378,19 @@ We need to perform the dependency injection process using the @Autowired annotat
 public class ProductController {
     
     /* Since we are marking this property as final, Lombok will try to satisfy
-     * the dependency creating an instance of the service and inject it before
-     * instantiate the controller. 
+     * the dependency creating an instance of the services and inject it before
+     * instantiate the controllers. 
      */
     private final ProductService productService;
 }
 ```
 Now our controller should look like.
-```java
-package com.example.product.controller;
 
-import com.example.product.model.Product;
-import com.example.product.service.ProductService;
+```java
+package com.example.product.controllers;
+
+import com.example.product.models.Product;
+import com.example.product.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
@@ -400,38 +407,38 @@ import java.util.List;
 @RequestMapping(path = "/v1/product")
 public class ProductController {
 
-    private final ProductService productService;
+  private final ProductService productService;
 
-    @GetMapping(path = "/list")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<List<Product>> list() {
-        return ResponseEntity.ok(productService.all());
-    }
+  @GetMapping(path = "/list")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public ResponseEntity<List<Product>> list() {
+    return ResponseEntity.ok(productService.all());
+  }
 
-    @GetMapping(path = "/{id}")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Product> read(@PathVariable(required = true) long id) {
-        return ResponseEntity.ok(productService.get(id));
-    }
+  @GetMapping(path = "/{id}")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public ResponseEntity<Product> read(@PathVariable(required = true) long id) {
+    return ResponseEntity.ok(productService.get(id));
+  }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Product> create(@RequestBody(required = true) @NonNull @Valid Product product) {
-        return ResponseEntity.ok(productService.save(productService.save(product)));
-    }
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public ResponseEntity<Product> create(@RequestBody(required = true) @NonNull @Valid Product product) {
+    return ResponseEntity.ok(productService.save(productService.save(product)));
+  }
 
-    @PutMapping(path = "/{id}")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Product> update(@PathVariable(required = true) long id, @RequestBody(required = true) Product product) {
-        return ResponseEntity.ok(productService.update(id, product));
-    }
+  @PutMapping(path = "/{id}")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public ResponseEntity<Product> update(@PathVariable(required = true) long id, @RequestBody(required = true) Product product) {
+    return ResponseEntity.ok(productService.update(id, product));
+  }
 
-    @DeleteMapping(path = "/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public ResponseEntity<Void> delete(@PathVariable(required = true) long id) {
-        productService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping(path = "/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public ResponseEntity<Void> delete(@PathVariable(required = true) long id) {
+    productService.delete(id);
+    return ResponseEntity.noContent().build();
+  }
 
 }
 ```
