@@ -442,3 +442,79 @@ public class ProductController {
 
 }
 ```
+### Repository
+__Spring @Repository annotation__ is a specialization of __@Component annotation__, so Spring Repository classes are auto-detected by __spring framework__ through classpath scanning. Spring Repository is very close to __DAO__ pattern where __DAO__ classes are responsible for providing __CRUD__ operations on database tables.
+#### ProductRepository.java
+We need to create a new file inside a new package called "repositories", this results in something like this. `src/main/java/com/example/product/repositories/ProductRepository.java`.
+Now our repository should be like this:
+
+```java
+package com.example.product.repositories;
+
+import com.example.product.models.Product;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ProductRepository extends CrudRepository<Product, Long> {
+}
+
+```
+In the same way that we did with the service and the controller, we have to link the new repository to the service by using dependency injection, and as we already know we can use Lombok for this.
+Now our `ProductService.java` should look like:
+
+```java
+package com.example.product.services;
+
+import com.example.product.models.Product;
+import com.example.product.repositories.ProductRepository;
+import lombok.Data;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.StreamSupport;
+
+@Data
+@Service
+public class ProductService {
+
+  private final ProductRepository productRepository;
+
+  public List<Product> all() {
+    return StreamSupport.stream(productRepository.findAll().spliterator(), false).toList();
+  }
+
+  public Product get(final long id) {
+    return productRepository.findById(id).orElseThrow();
+  }
+
+  public Product save(final Product product) {
+    return productRepository.save(product);
+  }
+
+  public Product update(final long id, final Product product) {
+    return productRepository.findById(id).map(existing -> {
+      product.setId(existing.getId());
+      return productRepository.save(product);
+    }).orElseThrow();
+  }
+
+  public void delete(final long id) {
+    productRepository.deleteById(id);
+  }
+}
+
+```
+### Testing our service
+Once we've finished, we need to start our service and test this URL `http://localhost:8080/v1/product/list`, if we did everything correctly we should see something like this:
+<figure>
+    <img src="/readme-assets/results.png"
+         alt="Results on chrome browser">
+    <figcaption>List of records from the DB</figcaption>
+</figure>
+We can verify the existing data in the DB console
+<figure>
+    <img src="/readme-assets/h2-with-data.png"
+         alt="H2 Console with data loaded from 'data.sql'">
+    <figcaption>After run the query you will see a result list with the data inserted in the database.</figcaption>
+</figure>
