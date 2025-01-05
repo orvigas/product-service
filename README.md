@@ -314,3 +314,124 @@ This a list of the most important ones
   - `@GeneratedValue`
 - Lombok
   - `@Data`
+
+### Service
+In an application, the business logic resides within the service layer so we use the __@Service Annotation__ to indicate that a class belongs to that layer. It is also a specialization of __@Component Annotation__ like the __@Repository Annotation__. One most important thing about the __@Service Annotation__ is it can be applied only to classes. It is used to mark the class as a service provider. So overall __@Service annotation__ is used with classes that provide some business functionalities.
+#### ProductService.java
+Now our service should be like this:
+```java
+package com.example.product.service;
+
+import com.example.product.model.Product;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class ProductService {
+
+    public List<Product> all() {
+        return List.of(new Product());
+    }
+
+    public Product get(final long id) {
+        return new Product();
+    }
+
+    public Product save(final Product product) {
+        return new Product();
+    }
+
+    public Product update(final long id, final Product product) {
+        return new Product();
+    }
+
+    public void delete(final long id) {
+
+    }
+}
+```
+Now we need to change a couple of things in our `ProductController.java` file.
+```java
+@RestController
+@Validated
+@RequestMapping(path = "/v1/product")
+public class ProductController {
+
+    @Autowired
+    private ProductService productService;//We need to inject the service
+  //...
+}
+```
+We need to perform the dependency injection process using the @Autowired annotation to create an instance of our newly created service and inject it into the product controller, but since we are using the Lombok library in our project, we can get rid of the @Autowired annotation leveraging the Lombok power of complete code and its dependencies behind the scene.
+```java
+@Data//This annotation will create the boilerplate code for us
+@Validated
+@RestController
+@RequestMapping(path = "/v1/product")
+public class ProductController {
+    
+    /* Since we are marking this property as final, Lombok will try to satisfy
+     * the dependency creating an instance of the service and inject it before
+     * instantiate the controller. 
+     */
+    private final ProductService productService;
+}
+```
+Now our controller should look like.
+```java
+package com.example.product.controller;
+
+import com.example.product.model.Product;
+import com.example.product.service.ProductService;
+import jakarta.validation.Valid;
+import lombok.Data;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@Data
+@Validated
+@RestController
+@RequestMapping(path = "/v1/product")
+public class ProductController {
+
+    private final ProductService productService;
+
+    @GetMapping(path = "/list")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<List<Product>> list() {
+        return ResponseEntity.ok(productService.all());
+    }
+
+    @GetMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<Product> read(@PathVariable(required = true) long id) {
+        return ResponseEntity.ok(productService.get(id));
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Product> create(@RequestBody(required = true) @NonNull @Valid Product product) {
+        return ResponseEntity.ok(productService.save(productService.save(product)));
+    }
+
+    @PutMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<Product> update(@PathVariable(required = true) long id, @RequestBody(required = true) Product product) {
+        return ResponseEntity.ok(productService.update(id, product));
+    }
+
+    @DeleteMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> delete(@PathVariable(required = true) long id) {
+        productService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+}
+```
