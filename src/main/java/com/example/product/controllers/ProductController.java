@@ -1,7 +1,7 @@
-package com.example.product.controller;
+package com.example.product.controllers;
 
-import com.example.product.model.Product;
-import com.example.product.service.ProductService;
+import com.example.product.models.Product;
+import com.example.product.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
@@ -11,10 +11,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 @Data
-@Validated
 @RestController
+@Validated
 @RequestMapping(path = "/v1/product")
 public class ProductController {
 
