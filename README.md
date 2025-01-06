@@ -48,7 +48,7 @@ Download and unzip the project in your computer
     <figcaption>Spring Boot Project should be unzipped and after loaded in your IDE.</figcaption>
 </figure>
 
-Load your project into your preferred IDE (I'm using <a href="https://www.jetbrains.com/es-es/idea/download/other.html">IntelliJ Idea CE</a>),
+Load your project into your preferred IDE (I'm using <a href="https://www.jetbrains.com/es-es/idea/download/other.html" target="_blank">IntelliJ Idea CE</a>),
 download and unzip the project in your computer.
 <figure>
     <img src="/readme-assets/intellij.png"
@@ -103,7 +103,7 @@ Click connect, and you should be redirected to the H2 DB console like this.
 </figure>
 
 ### Database Initialization
-After configuring the H2 Database in our project, we should be able to load data into the database by following the <a href="https://docs.spring.io/spring-boot/how-to/data-initialization.html">documentation</a>, which says that we are able to load data into our DB on project start by setting spring.jpa.hibernate.ddl-auto to control Hibernate’s database initialization. Supported values are none, validate, update, create, and create-drop.
+After configuring the H2 Database in our project, we should be able to load data into the database by following the <a href="https://docs.spring.io/spring-boot/how-to/data-initialization.html" target="_blank">documentation</a>, which says that we are able to load data into our DB on project start by setting spring.jpa.hibernate.ddl-auto to control Hibernate’s database initialization. Supported values are none, validate, update, create, and create-drop.
 
 In addition, a file named data.sql in the root of the classpath (`src/main/resources/data.sql`) is executed on startup if Hibernate creates the schema from scratch (that is, if the ddl-auto property is set to create or create-drop).
 
@@ -322,7 +322,7 @@ This a list of the most important ones
 ### Service
 In an application, the business logic resides within the service layer so we use the __@Service Annotation__ to indicate that a class belongs to that layer. It is also a specialization of __@Component Annotation__ like the __@Repository Annotation__. One most important thing about the __@Service Annotation__ is it can be applied only to classes. It is used to mark the class as a service provider. So overall __@Service annotation__ is used with classes that provide some business functionalities.
 #### ProductService.java
-We need to create a new file inside a new package called "services", this results in something like this. `src/main/java/com/example/product/services/ProductService.java`.
+We need to create a new file inside a new package called "services", this results in something like this. `src/main/java/com/example/product/services/ProductService.java`. 
 Now our service should be like this:
 
 ```java
@@ -518,3 +518,359 @@ We can verify the existing data in the DB console
          alt="H2 Console with data loaded from 'data.sql'">
     <figcaption>After run the query you will see a result list with the data inserted in the database.</figcaption>
 </figure>
+
+#### Postman
+Postman is a software application that allows developers to test, document, and share APIs (Application Programming Interfaces).
+You can get it from <a href="https://www.postman.com/" target="_blank">here.</a>
+
+Let's create a collection, first of all, install postman on your computer, create an account (optional), I will recommend using an account to save your workspace in the postman cloud.
+<figure>
+    <img src="/readme-assets/postman-app.png"
+         alt="Installed Postman app in MacOS">
+    <figcaption>Click on your app.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/login.png"
+         alt="Login form">
+    <figcaption>Login.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/create-workspace.png"
+         alt="Choose a new workspace">
+    <figcaption>Select API development, and click next.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/configure-workspace.png"
+         alt="Name your workspace">
+    <figcaption>Configure it, and click next.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/ready-workspace.png"
+         alt="Let's go!">
+    <figcaption>Congratulations you have a new postman workspace configured.</figcaption>
+</figure>
+
+#### Environment variables
+Variables enable you to store and reuse values in Postman. By storing a value as a variable, you can reference it throughout your collections, environments, requests, and scripts. Variables help you work efficiently, collaborate with teammates, and set up dynamic workflows.
+
+For example, if you have the same URL in more than one request, but the URL might change, you can store it in a variable called `base_url`. Then, reference the variable in your requests using `{{base_url}}`. If the URL changes, you can change the variable value, and it will be reflected throughout your collection, wherever you've used the variable name.
+
+The same principle applies to any part of your request where data is repeated. Whatever value is stored in the variable will be included wherever you've referenced the variable when your requests run. If the base URL value is `https://postman-echo.com`, and is listed as part of the request URL using `{{base_url}}/get`, Postman will send the request to `https://postman-echo.com/get`.
+
+<figure>
+    <img src="/readme-assets/environment-editor-v11-12.jpg"
+         alt="Variable creation">
+    <figcaption>Example of how to create variables in postman.</figcaption>
+</figure>
+
+<figure>
+    <img src="/readme-assets/reference-var-v11-18.jpg"
+         alt="Variable usage">
+    <figcaption>Example of how to use variables in postman.</figcaption>
+</figure>
+
+#### Create a collection
+Collections are used in postman to group http request for an API.
+<figure>
+    <img src="/readme-assets/Collection.png"
+         alt="Variable usage">
+    <figcaption>Example of how to create a collection in postman.</figcaption>
+</figure>
+Once we've configured and ran our service we will be able to test it from postman.
+<figure>
+    <img src="/readme-assets/postman-result.png"
+         alt="Collection usage">
+    <figcaption>Example of how to use collections in postman.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/create.png"
+         alt="Insert record">
+    <figcaption>Example of how to insert a new record in postman.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/update-reg.png"
+         alt="Update record">
+    <figcaption>Example of how to update a record in postman.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/updated-console.png"
+         alt="Updated record in H2 console">
+    <figcaption>Now we can see the newly created record in console.</figcaption>
+</figure>
+<figure>
+    <img src="/readme-assets/delete.png"
+         alt="Delete record">
+    <figcaption>Example of how to delete a record in postman.</figcaption>
+</figure>
+
+#### Postman Environment and Collection
+You can import the environment configuration and the postman collection by using these JSON files.
+
+ENV
+```json
+{
+	"id": "d8bb62d9-29f0-4e58-8f18-7e98f3b7087b",
+	"name": "Development",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/v1/product",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2025-01-06T01:31:43.854Z",
+	"_postman_exported_using": "Postman/11.23.3"
+}
+```
+COLLECTION
+```json
+{
+	"info": {
+		"_postman_id": "4919159b-2ca9-4606-8007-4adcf32b79b3",
+		"name": "REST API basics: CRUD, test & variable",
+		"description": "# 🚀 Get started here\n\nThis template guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this template**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these [request](https://learning.postman.com/docs/sending-requests/requests/) types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT request.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n ```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a [variable](https://learning.postman.com/docs/sending-requests/variables/) called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Scripts\" tab**\n\nAdding tests to your requests can help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/fa30ea0a-373d-4545-a668-e7b283cca343/aW1hZ2UucG5n\" alt=\"\" height=\"1530\" width=\"2162\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n    \n- Add more [scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/) to verify if the API works as expected and execute workflows.\n    \n\n## 💡Related templates\n\n[API testing basics](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9a37a28-055b-49cd-8c7e-97494a21eb54&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[API documentation](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9c28f47-1253-44af-a2f3-20dce4da1f18&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[Authorization methods](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=31a9a6ed-4cdf-4ced-984c-d12c9aec1c27&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1022474"
+	},
+	"item": [
+		{
+			"name": "List data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/info?id=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"info"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				},
+				"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+			},
+			"response": []
+		},
+		{
+			"name": "Get data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"1"
+					]
+				},
+				"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+			},
+			"response": []
+		},
+		{
+			"name": "Post data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"sku\": \"9999\",\n        \"name\": \"Test product\",\n        \"description\": \"NULLam feugiat placerat velit. Quisque varius. Nam porttitor\",\n        \"price\": 102.44,\n        \"taxRate\": 33\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Update data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful PUT request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"Add your name in the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/info?id=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"info"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				},
+				"description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Delete data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful DELETE request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 202, 204]);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/info?id=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"info"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				},
+				"description": "This is a DELETE request, and it is used to delete data that was previously created via a POST request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful DELETE request typically returns a `200 OK`, `202 Accepted`, or `204 No Content` response code."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "id",
+			"value": "1"
+		},
+		{
+			"key": "base_url",
+			"value": "https://postman-rest-api-learner.glitch.me/"
+		}
+	]
+}
+```
+FILES
+
+- [product-service-postma-collection.json](readme-assets/product-service-postma-collection.json)
+- [product-service-postma-environment.json](readme-assets/product-service-postma-environment.json)
