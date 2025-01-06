@@ -1,0 +1,15 @@
+{
+	"id": "d8bb62d9-29f0-4e58-8f18-7e98f3b7087b",
+	"name": "Development",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/v1/product",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2025-01-06T01:31:43.854Z",
+	"_postman_exported_using": "Postman/11.23.3"
+}
