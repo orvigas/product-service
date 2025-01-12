@@ -1,5 +1,6 @@
 package com.example.product.controllers;
 
+import com.example.product.dtos.ProductDto;
 import com.example.product.models.Product;
 import com.example.product.services.ProductService;
 import jakarta.validation.Valid;
@@ -25,32 +26,33 @@ public class ProductController {
 
     @GetMapping(path = "/list")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Page<Product>> getProducts(
+    public ResponseEntity<Page<ProductDto>> getProducts(
             @RequestParam(required = false, defaultValue = "0") int pageNumber,
             @RequestParam(required = false, defaultValue = "5") int pageSize,
             @RequestParam(required = false, defaultValue = "id") String sort,
             @RequestParam(required = false, defaultValue = "ASC") String direction) {
         return ResponseEntity.ok(productService
-                .all(PageRequest.of(pageNumber, pageSize, Sort.by(Direction.fromString(direction), sort))));
+                .all(PageRequest.of(pageNumber, pageSize, Sort.by(Direction.fromString(direction), sort)))
+                .map(Product::dto));
     }
 
     @GetMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Product> read(@PathVariable(required = true) long id) {
-        return ResponseEntity.ok(productService.get(id));
+    public ResponseEntity<ProductDto> read(@PathVariable(required = true) long id) {
+        return ResponseEntity.ok(productService.get(id).dto());
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Product> create(@RequestBody(required = true) @NonNull @Valid Product product) {
-        return ResponseEntity.ok(productService.save(productService.save(product)));
+    public ResponseEntity<ProductDto> create(@RequestBody(required = true) @NonNull @Valid ProductDto productDto) {
+        return ResponseEntity.ok(productService.save(productService.save(productDto.model())).dto());
     }
 
     @PutMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Product> update(@PathVariable(required = true) long id,
-            @RequestBody(required = true) Product product) {
-        return ResponseEntity.ok(productService.update(id, product));
+    public ResponseEntity<ProductDto> update(@PathVariable(required = true) long id,
+            @RequestBody(required = true) ProductDto productDto) {
+        return ResponseEntity.ok(productService.update(id, productDto.model()).dto());
     }
 
     @DeleteMapping(path = "/{id}")

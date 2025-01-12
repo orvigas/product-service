@@ -2,6 +2,10 @@ package com.example.product.models;
 
 import java.math.BigInteger;
 
+import org.springframework.beans.BeanUtils;
+
+import com.example.product.dtos.ProductDto;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,4 +33,12 @@ public class Product {
     private double price;
     @Column(name = "tax_rate")
     private double taxRate;
+
+    public ProductDto dto() {
+
+        final var instance = new ProductDto();
+        BeanUtils.copyProperties(this, instance);
+
+        return instance;
+    }
 }
