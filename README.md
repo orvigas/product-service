@@ -36,14 +36,14 @@ If you want to create your own Spring Boot-based project, visit <a href="https:/
 ### Product Service Project Conf
 Open the Spring Initializr and configure a new project as follows
 <figure>
-    <img src="/readme-assets/initializr.png"
+    <img src="./readme-assets/initializr.png"
          alt="Spring Initializr page">
     <figcaption>Spring Boot Project configuration used in this tutorial.</figcaption>
 </figure>
 
 Download and unzip the project in your computer
 <figure>
-    <img src="/readme-assets/unzip.png"
+    <img src="./readme-assets/unzip.png"
          alt="Unzip the project in your directory">
     <figcaption>Spring Boot Project should be unzipped and after loaded in your IDE.</figcaption>
 </figure>
@@ -51,7 +51,7 @@ Download and unzip the project in your computer
 Load your project into your preferred IDE (I'm using <a href="https://www.jetbrains.com/es-es/idea/download/other.html" target="_blank">IntelliJ Idea CE</a>),
 download and unzip the project in your computer.
 <figure>
-    <img src="/readme-assets/intellij.png"
+    <img src="./readme-assets/intellij.png"
          alt="Load the project into your IDE">
     <figcaption>After loading the project we will be ready to start or configuration process.</figcaption>
 </figure>
@@ -90,14 +90,14 @@ spring.h2.console.path=/h2-ui
 ```
 Run your application and open a web browser, let's test the H2 console by going to `http://localhost:8080/h2-ui`, once the console login form is loaded, use your credentials defined in the `#Spring datasource` section of your `application.properties` file and test if you have access.
 <figure>
-    <img src="/readme-assets/h2.png"
+    <img src="./readme-assets/h2.png"
          alt="H2 Console">
     <figcaption>After clicking the "Test Connection" button you should see a green "Test successful" message.</figcaption>
 </figure>
 
 Click connect, and you should be redirected to the H2 DB console like this.
 <figure>
-    <img src="/readme-assets/H2-console.png"
+    <img src="./readme-assets/H2-console.png"
          alt="H2 Console">
     <figcaption>In this page you will be able to run SQL queries verify your table structure, etc.</figcaption>
 </figure>
@@ -113,16 +113,16 @@ DROP sequence if EXISTS products_seq;
 CREATE sequence products_seq start WITH 1 increment by 50;
 CREATE TABLE products (price float(53), tax_rate float(53), id bigint NOT NULL, description varchar(255), name varchar(255), sku varchar(255) UNIQUE, PRIMARY KEY (id));
 
-INSERT INTO products (id,sku,name,description,price,tax_rate)
+INSERT INTO products (sku,name,description,price,tax_rate)
 VALUES
-  (1,5223,'#ea9c9a','purus mauris a nunc. In at pede. Cras vulputate velit',34,3),
-  (2,8192,'#70eace','NULLam feugiat placerat velit. Quisque varius. Nam porttitor',39,2),
-  (3,5050,'#f7f25b','Fusce aliquet magna a neque. NULLam ut',103,6);
+  (5223,'#ea9c9a','purus mauris a nunc. In at pede. Cras vulputate velit',34,3),
+  (8192,'#70eace','NULLam feugiat placerat velit. Quisque varius. Nam porttitor',39,2),
+  (5050,'#f7f25b','Fusce aliquet magna a neque. NULLam ut',103,6);
 ```
 
 Run the application again, connect to the H2 DB console, you should see a new table called `products`, click on it and run the query
 <figure>
-    <img src="/readme-assets/h2-with-data.png"
+    <img src="./readme-assets/h2-with-data.png"
          alt="H2 Console with data loaded from 'data.sql'">
     <figcaption>After run the query you will see a result list with the data inserted in the database.</figcaption>
 </figure>
@@ -176,7 +176,7 @@ import lombok.Data;
 public class Product {
   @Id
   @Column(name = "id")
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;
   @Column(name = "sku", unique = true)
   private String sku;
@@ -239,7 +239,7 @@ public class ProductController {
 ```
 Run your application again and test this url `http://localhost:8080/v1/product`, we should get something like this
 <figure>
-    <img src="/readme-assets/first-controller.png"
+    <img src="./readme-assets/first-controller.png"
          alt="GET Request response">
     <figcaption>Response from the controller.</figcaption>
 </figure>
@@ -508,13 +508,13 @@ public class ProductService {
 ### Testing our service
 Once we've finished, we need to start our service and test this URL `http://localhost:8080/v1/product/list`, if we did everything correctly we should see something like this:
 <figure>
-    <img src="/readme-assets/results.png"
+    <img src="./readme-assets/results.png"
          alt="Results on chrome browser">
     <figcaption>List of records from the DB</figcaption>
 </figure>
 We can verify the existing data in the DB console
 <figure>
-    <img src="/readme-assets/h2-with-data.png"
+    <img src="./readme-assets/h2-with-data.png"
          alt="H2 Console with data loaded from 'data.sql'">
     <figcaption>After run the query you will see a result list with the data inserted in the database.</figcaption>
 </figure>
@@ -525,27 +525,27 @@ You can get it from <a href="https://www.postman.com/" target="_blank">here.</a>
 
 Let's create a collection, first of all, install postman on your computer, create an account (optional), I will recommend using an account to save your workspace in the postman cloud.
 <figure>
-    <img src="/readme-assets/postman-app.png"
+    <img src="./readme-assets/postman-app.png"
          alt="Installed Postman app in MacOS">
     <figcaption>Click on your app.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/login.png"
+    <img src="./readme-assets/login.png"
          alt="Login form">
     <figcaption>Login.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/create-workspace.png"
+    <img src="./readme-assets/create-workspace.png"
          alt="Choose a new workspace">
     <figcaption>Select API development, and click next.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/configure-workspace.png"
+    <img src="./readme-assets/configure-workspace.png"
          alt="Name your workspace">
     <figcaption>Configure it, and click next.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/ready-workspace.png"
+    <img src="./readme-assets/ready-workspace.png"
          alt="Let's go!">
     <figcaption>Congratulations you have a new postman workspace configured.</figcaption>
 </figure>
@@ -558,13 +558,13 @@ For example, if you have the same URL in more than one request, but the URL migh
 The same principle applies to any part of your request where data is repeated. Whatever value is stored in the variable will be included wherever you've referenced the variable when your requests run. If the base URL value is `https://postman-echo.com`, and is listed as part of the request URL using `{{base_url}}/get`, Postman will send the request to `https://postman-echo.com/get`.
 
 <figure>
-    <img src="/readme-assets/environment-editor-v11-12.jpg"
+    <img src="./readme-assets/environment-editor-v11-12.jpg"
          alt="Variable creation">
     <figcaption>Example of how to create variables in postman.</figcaption>
 </figure>
 
 <figure>
-    <img src="/readme-assets/reference-var-v11-18.jpg"
+    <img src="./readme-assets/reference-var-v11-18.jpg"
          alt="Variable usage">
     <figcaption>Example of how to use variables in postman.</figcaption>
 </figure>
@@ -572,33 +572,33 @@ The same principle applies to any part of your request where data is repeated. W
 #### Create a collection
 Collections are used in postman to group http request for an API.
 <figure>
-    <img src="/readme-assets/Collection.png"
+    <img src="./readme-assets/Collection.png"
          alt="Variable usage">
     <figcaption>Example of how to create a collection in postman.</figcaption>
 </figure>
 Once we've configured and ran our service we will be able to test it from postman.
 <figure>
-    <img src="/readme-assets/postman-result.png"
+    <img src="./readme-assets/postman-result.png"
          alt="Collection usage">
     <figcaption>Example of how to use collections in postman.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/create.png"
+    <img src="./readme-assets/create.png"
          alt="Insert record">
     <figcaption>Example of how to insert a new record in postman.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/update-reg.png"
+    <img src="./readme-assets/update-reg.png"
          alt="Update record">
     <figcaption>Example of how to update a record in postman.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/updated-console.png"
+    <img src="./readme-assets/updated-console.png"
          alt="Updated record in H2 console">
     <figcaption>Now we can see the newly created record in console.</figcaption>
 </figure>
 <figure>
-    <img src="/readme-assets/delete.png"
+    <img src="./readme-assets/delete.png"
          alt="Delete record">
     <figcaption>Example of how to delete a record in postman.</figcaption>
 </figure>

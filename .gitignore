@@ -17,3 +17,6 @@ buildNumber.properties
 .classpath
 # IntelliJ IDEA
 .idea
+# VSCode
+.vscode
+
