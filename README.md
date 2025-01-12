@@ -888,8 +888,8 @@ Currently if we consume the `/v1/list` method with postman we will see a huge li
 
 <figure>
     <img src="./readme-assets/list-entire-result.png"
-         alt="Delete record">
-    <figcaption>Example of how to delete a record in postman.</figcaption>
+         alt="Entire dataset">
+    <figcaption>All the existing records are returned.</figcaption>
 </figure>
 
 To achieve the pagination in our product service we must change a few things in our controller and service layers.
@@ -916,3 +916,15 @@ To
                 .all(PageRequest.of(pageNumber, pageSize, Sort.by(Direction.fromString(direction), sort))));
     }
 ```
+
+#### Pagination implemented
+Now we need to run our service and hit thie URL `http://localhost:8080/v1/product/list?pageNumber=2&pageSize=2&sort=sku&direction=ASC`
+
+Result
+<figure>
+    <img src="./readme-assets/filtered-list.png"
+         alt="A samller set of records are returned">
+    <figcaption>Filtered result using the pagination configuration.</figcaption>
+</figure>
+
+As you can see we should be able to change the parameters in the URL and gat a distinct set of results.
