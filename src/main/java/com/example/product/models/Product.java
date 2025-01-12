@@ -1,5 +1,7 @@
 package com.example.product.models;
 
+import java.math.BigInteger;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,9 +17,9 @@ import lombok.Data;
 public class Product {
     @Id
     @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
-    @Column(name = "sku", unique = true)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(name = "sku")
     private String sku;
     @Column(name = "name")
     private String name;
