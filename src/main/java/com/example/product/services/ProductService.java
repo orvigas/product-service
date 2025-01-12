@@ -3,10 +3,10 @@ package com.example.product.services;
 import com.example.product.models.Product;
 import com.example.product.repositories.ProductRepository;
 import lombok.Data;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.StreamSupport;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
 
 @Data
 @Service
@@ -14,8 +14,8 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public List<Product> all() {
-        return StreamSupport.stream(productRepository.findAll().spliterator(),false).toList();
+    public Page<Product> all(final PageRequest pageRequest) {
+        return productRepository.findAll(pageRequest);
     }
 
     public Product get(final long id) {
