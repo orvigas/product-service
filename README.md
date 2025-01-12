@@ -923,8 +923,322 @@ Now we need to run our service and hit thie URL `http://localhost:8080/v1/produc
 Result
 <figure>
     <img src="./readme-assets/filtered-list.png"
-         alt="A samller set of records are returned">
+         alt="A smaller set of records are returned">
     <figcaption>Filtered result using the pagination configuration.</figcaption>
 </figure>
 
 As you can see we should be able to change the parameters in the URL and gat a distinct set of results.
+
+### DTO design pattern
+
+#### Introduction
+Data Transfer Objects (DTOs) are a crucial design pattern in software development, especially when working with Spring Boot applications. This guide will delve into the concept of DTOs, their importance, implementation techniques, and best practices in the context of Spring Boot.
+
+#### What are DTOs?
+DTOs are objects that carry data between processes or layers in an application. They’re used to encapsulate and transport data, typically between the server and the client, or between different layers of an application.
+
+__Key characteristics of DTOs:__
+
+- Simple objects with no business logic
+- Contain only fields, getters, setters, and sometimes constructors
+- Used to reduce the number of method calls and improve performance
+
+#### Why Use DTOs in Spring Boot?
+1. __Data Hiding:__ DTOs allow you to expose only the necessary data to clients, hiding sensitive information or complex object structures.
+2. __Decoupling:__ They help separate the internal data model from the external API representation.
+3. __Versioning:__ DTOs make it easier to version your API as your data model evolves.
+4. __Performance:__ By transferring only required data, DTOs can improve network performance, especially in distributed systems.
+5. __Flexibility:__ You can tailor DTOs to specific use cases, combining data from multiple entities or omitting unnecessary fields.
+
+Let's create our `src/main/java/com/example/product/dtos/ProductDto.java`
+```java
+package com.example.product.dtos;
+
+import java.io.Serializable;
+
+import org.springframework.beans.BeanUtils;
+
+import com.example.product.models.Product;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+public class ProductDto implements Serializable {
+
+    private Long id;
+
+    @Size(min = 2, max = 255)
+    @NotBlank(message = "Sku is mandatory")
+    private String sku;
+
+    @JsonProperty("productName")
+    @NotBlank(message = "productName is mandatory")
+    private String name;
+
+    @Size(min = 10, max = 255)
+    @NotBlank(message = "description is mandatory")
+    private String description;
+
+    @NotNull(message = "price must be a decimal number")
+    private double price;
+
+    @NotNull(message = "taxRate must be a decimal number")
+    private double taxRate;
+
+    public Product model() {
+
+        final var instance = new Product();
+        BeanUtils.copyProperties(this, instance);
+
+        return instance;
+    }
+}
+```
+As you can see, our `ProductDto.java` is almost identic to the Product model, it contains the fields that we want to move from one place to another, and also enable the visivility of those fields to the consumer. Also introduce a set of new annotations most of them realated to the validation of the object data, and a new method that works as a mapper to transform our DTO into a MODEL and viceversa.
+
+##### Serialization
+__Serialization__ in Java is the process of converting an object into a byte stream, so it can be saved to a file, transmitted over a network, or stored in a database, and later reconstructed. This is often used for persisting object states or for communication between distributed systems.
+
+__Key Points:__
+1. __Serializable Interface:__ To serialize an object, the class must implement the `java.io.Serializable` interface, which is a marker interface (contains no methods).
+2. __ObjectOutputStream:__ Used to write an object to an output stream.
+	```java
+	ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("object.ser"));
+	out.writeObject(obj);
+	out.close();
+	```
+3. __ObjectInputStream:__ Used to read the serialized object and reconstruct it.
+	```java
+	ObjectInputStream in = new ObjectInputStream(new FileInputStream("object.ser"));
+	MyClass obj = (MyClass) in.readObject();
+	in.close();
+	```
+4. __Transient Keyword:__ Fields marked with transient are excluded from serialization.
+5. __serialVersionUID:__ A unique identifier used to verify compatibility during deserialization.
+
+__Serialization__ enables easy storage and transfer of Java objects, making it fundamental for applications like caching, session storage, and remote procedure calls (RPC).
+
+##### ProductDto.java serialization
+```java
+package com.example.product.dtos;
+
+import java.io.Serializable;
+
+import org.springframework.beans.BeanUtils;
+
+import com.example.product.models.Product;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+public class ProductDto implements Serializable {
+
+    private Long id;
+
+    @Size(min = 2, max = 255)
+    @NotBlank(message = "Sku is mandatory")
+    private String sku;
+
+	/* 
+	* This @JsonProperty annotation is used to create an alias of the name field,
+	* then the output of the service will include the "productName" field 
+	* instead of "name"
+	*/
+    @JsonProperty("productName") 
+    @NotBlank(message = "productName is mandatory")
+    private String name;
+
+    @Size(min = 10, max = 255) // Validate the size of the field
+    @NotBlank(message = "description is mandatory") // Prevent empty strings or null values
+    private String description;
+
+    @NotNull(message = "price must be a decimal number")
+    private double price;
+
+    @NotNull(message = "taxRate must be a decimal number")
+    private double taxRate;
+
+    public Product model() { // This method acts as a mapper and creates a model from a dto
+
+        final var instance = new Product();
+        BeanUtils.copyProperties(this, instance);
+
+        return instance;
+    }
+}
+```
+
+Also we need to implement the mapper method in the model in order to produce a `DTO` from a `MODEL`
+```java
+package com.example.product.models;
+
+import java.math.BigInteger;
+
+import org.springframework.beans.BeanUtils;
+
+import com.example.product.dtos.ProductDto;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import lombok.Data;
+
+@Data
+@Entity
+@Table(name = "products")
+public class Product {
+    @Id
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(name = "sku")
+    private String sku;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "description")
+    private String description;
+    @Column(name = "price")
+    private double price;
+    @Column(name = "tax_rate")
+    private double taxRate;
+
+    public ProductDto dto() { // This is the backeards mapper
+
+        final var instance = new ProductDto();
+        BeanUtils.copyProperties(this, instance);
+
+        return instance;
+    }
+}
+```
+Now we need to implement a few changes in our `ProductController.java`to enable the use of the `DTOs` and `Mappers`.
+
+##### ProductController.java
+```java
+package com.example.product.controllers;
+
+import com.example.product.dtos.ProductDto;
+import com.example.product.models.Product;
+import com.example.product.services.ProductService;
+import jakarta.validation.Valid;
+import lombok.Data;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+@Data
+@RestController
+@Validated
+@RequestMapping(path = "/v1/product")
+public class ProductController {
+
+    private final ProductService productService;
+
+    @GetMapping(path = "/list")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<Page<ProductDto>> getProducts(
+            @RequestParam(required = false, defaultValue = "0") int pageNumber,
+            @RequestParam(required = false, defaultValue = "5") int pageSize,
+            @RequestParam(required = false, defaultValue = "id") String sort,
+            @RequestParam(required = false, defaultValue = "ASC") String direction) {
+        return ResponseEntity.ok(productService
+                .all(PageRequest.of(pageNumber, pageSize, Sort.by(Direction.fromString(direction), sort)))
+                .map(Product::dto));
+    }
+
+    @GetMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<ProductDto> read(@PathVariable(required = true) long id) {
+        return ResponseEntity.ok(productService.get(id).dto());
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<ProductDto> create(@RequestBody(required = true) @NonNull @Valid ProductDto productDto) {
+        return ResponseEntity.ok(productService.save(productService.save(productDto.model())).dto());
+    }
+
+    @PutMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<ProductDto> update(@PathVariable(required = true) long id,
+            @RequestBody(required = true) ProductDto productDto) {
+        return ResponseEntity.ok(productService.update(id, productDto.model()).dto());
+    }
+
+    @DeleteMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> delete(@PathVariable(required = true) long id) {
+        productService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+}
+```
+Now we need to test our changes using postman by making a request to the `http://localhost:8080/v1/product/list?pageNumber=2&pageSize=2&sort=sku&direction=ASC`, this will return a json response like this.
+```json
+{
+    "content": [
+        {
+            "id": 272,
+            "sku": "00uz-v2",
+            "description": "pellentesque eget nunc donec quis orci eget orci vehicula condimentum curabitur in",
+            "price": 1021.4,
+            "taxRate": 9.0,
+            "productName": "Oppo A92s"
+        },
+        {
+            "id": 367,
+            "sku": "01Cu-42",
+            "description": "lectus suspendisse potenti in eleifend quam a odio in hac habitasse platea dictumst maecenas ut massa quis augue luctus",
+            "price": 1221.05,
+            "taxRate": 78.0,
+            "productName": "alcatel 3L (2021)"
+        }
+    ],
+    "pageable": {
+        "pageNumber": 2,
+        "pageSize": 2,
+        "sort": {
+            "sorted": true,
+            "unsorted": false,
+            "empty": false
+        },
+        "offset": 4,
+        "paged": true,
+        "unpaged": false
+    },
+    "totalPages": 500,
+    "totalElements": 1000,
+    "last": false,
+    "numberOfElements": 2,
+    "first": false,
+    "size": 2,
+    "number": 2,
+    "sort": {
+        "sorted": true,
+        "unsorted": false,
+        "empty": false
+    },
+    "empty": false
+}
+```
+as you can se the `"name"` field was replaced with `"productName"`
