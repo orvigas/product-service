@@ -874,3 +874,45 @@ FILES
 
 - [product-service-postma-collection.json](readme-assets/product-service-postma-collection.json)
 - [product-service-postma-environment.json](readme-assets/product-service-postma-environment.json)
+### Pagination
+Pagination in a web service is a technique where a large dataset is divided into smaller, manageable chunks called "pages," allowing a client to retrieve only a specific portion of data at a time, improving performance and user experience by preventing overwhelming amounts of information from being loaded all at once; essentially, it's like turning pages in a book when accessing data from an API.
+
+#### Key points about pagination in web services:
+__Efficient data retrieval:__
+- By fetching only a limited amount of data per request, pagination reduces server load and network bandwidth usage.
+
+__User-friendly navigation:__
+- Users can easily navigate through different pages of data using controls like "next" and "previous" buttons, or page numbers.
+
+Currently if we consume the `/v1/list` method with postman we will see a huge list with all the products comming from our service forcing us to load the entire content of the database table each time that we call this endpoint.
+
+<figure>
+    <img src="./readme-assets/list-entire-result.png"
+         alt="Delete record">
+    <figcaption>Example of how to delete a record in postman.</figcaption>
+</figure>
+
+To achieve the pagination in our product service we must change a few things in our controller and service layers.
+
+#### Controller
+From
+```java
+@GetMapping(path = "/list")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<List<Product>> list() {
+        return ResponseEntity.ok(productService.all());
+    }
+```
+To
+```java
+    @GetMapping(path = "/list")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<Page<Product>> getProducts(
+            @RequestParam(required = false, defaultValue = "0") int pageNumber,
+            @RequestParam(required = false, defaultValue = "5") int pageSize,
+            @RequestParam(required = false, defaultValue = "id") String sort,
+            @RequestParam(required = false, defaultValue = "ASC") String direction) {
+        return ResponseEntity.ok(productService
+                .all(PageRequest.of(pageNumber, pageSize, Sort.by(Direction.fromString(direction), sort))));
+    }
+```

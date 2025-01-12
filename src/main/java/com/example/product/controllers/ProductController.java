@@ -4,13 +4,17 @@ import com.example.product.models.Product;
 import com.example.product.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.Data;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 @Data
 @RestController
 @Validated
@@ -21,8 +25,13 @@ public class ProductController {
 
     @GetMapping(path = "/list")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<List<Product>> list() {
-        return ResponseEntity.ok(productService.all());
+    public ResponseEntity<Page<Product>> getProducts(
+            @RequestParam(required = false, defaultValue = "0") int pageNumber,
+            @RequestParam(required = false, defaultValue = "5") int pageSize,
+            @RequestParam(required = false, defaultValue = "id") String sort,
+            @RequestParam(required = false, defaultValue = "ASC") String direction) {
+        return ResponseEntity.ok(productService
+                .all(PageRequest.of(pageNumber, pageSize, Sort.by(Direction.fromString(direction), sort))));
     }
 
     @GetMapping(path = "/{id}")
@@ -39,7 +48,8 @@ public class ProductController {
 
     @PutMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<Product> update(@PathVariable(required = true) long id, @RequestBody(required = true) Product product) {
+    public ResponseEntity<Product> update(@PathVariable(required = true) long id,
+            @RequestBody(required = true) Product product) {
         return ResponseEntity.ok(productService.update(id, product));
     }
 
