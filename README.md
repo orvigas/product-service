@@ -1242,3 +1242,319 @@ Now we need to test our changes using postman by making a request to the `http:/
 }
 ```
 as you can se the `"name"` field was replaced with `"productName"`
+
+### Error Handling
+Spring Boot provides beneficial error messages to engineers building REST APIs. Yet, those messages are useless for the general API consumer. We provide a simple approach to improving this functionality.
+
+> The ability to handle errors correctly in APIs while providing meaningful error messages is a desirable feature, as it can help the API client respond to issues. The default behavior returns stack traces that are hard to understand and ultimately useless for the API client. Partitioning the error information into fields enables the API client to parse it and provide better error messages to the user.
+
+#### Controller Advice
+`@RestControllerAdvice` is a convenience annotation in the Spring Framework that handles exceptions in RESTful web services. It's used to create a global exception handler that returns a JSON or XML response.
+
+__What it does__
+- Creates a global exception handler that can catch exceptions and transform them into HTTP responses.
+- Allows you to apply common logic to operations within controllers. 
+- Helps build a cleaner error-handling mechanism by centralizing response handling.
+
+__How it works__
+- `@RestControllerAdvice` is a combination of the `@ControllerAdvice` and `@ResponseBody` annotations 
+- `@ExceptionHandler` methods are rendered to the response body through message conversion. 
+- The `@ExceptionHandler` annotation specifies the type of exception that should be managed.
+
+__When to use it__
+- Typically used in RESTful web services where you want to return a specific error response in case of an exception
+- Can be used to display a custom error page to the user when an exception occurs
+
+#### Product Service
+Currently, our project handles the exceptions by default, but that might not be the best approach and could make it difficult to understand the causes of the errors due to the amount of information returned and its format.
+
+If we try to get a non exisiting record for example, we get something like this:
+
+```json
+{
+"timestamp":"2025-01-14T20:49:34.360+00:00",
+"status":500,
+"error":"Internal Server Error",
+"trace":"java.util.NoSuchElementException: No value present\n\tat java.base/java.util.Optional.orElseThrow(Optional.java:377)\n\tat com.example.product.services.ProductService.get(ProductService.java:22)\n\tat com.example.product.controllers.ProductController.read(ProductController.java:42)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)\n\tat org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)\n\tat org.springframework.validation.beanvalidation.MethodValidationInterceptor.invoke(MethodValidationInterceptor.java:174)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:727)\n\tat com.example.product.controllers.ProductController$$SpringCGLIB$$0.read(<generated>)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:257)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:190)\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1088)\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:978)\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)\n\tat org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)\n\tat org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)\n\tat org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)\n\tat org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)\n\tat org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)\n\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)\n\tat org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)\n\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)\n\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)\n\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)\n\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)\n\tat org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)\n\tat org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)\n\tat org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)\n\tat org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)\n\tat org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)\n\tat org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)\n\tat org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)\n\tat java.base/java.lang.Thread.run(Thread.java:840)\n","message":"No value present","path":"/v1/product/1001"}
+```
+This kind of responses are very difficult to read, and understand.
+
+##### Error Response
+At this point, we've created the Product DAO, the DAO is being used to pass data between layers. For this error-handling strategy, we are going to create a new class called `/src/main/java/com/example/product/dtos/ErrorResponseBody.java`, with the following structure.
+```java
+package com.example.product.dtos;
+
+import java.io.Serializable;
+import java.time.Instant;
+
+import org.springframework.http.HttpStatus;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class ErrorResponseBody implements Serializable {
+
+    private int code;
+    private HttpStatus status;
+    private String msg;
+    private Instant time;
+
+    public Instant getTime() {
+        if (this.time == null) {
+            this.time = Instant.now();
+        }
+
+        return this.time;
+    }
+}
+```
+##### Rest Controller Advice
+We allso need to create a new class to be the global exception handler for our project which will becaledp `src/main/java/com/example/product/controllers/ProductControllerAdvice.java`.
+```java
+package com.example.product.controllers;
+
+import java.util.NoSuchElementException;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.example.product.dtos.ErrorResponseBody;
+
+@RestControllerAdvice
+public class ProductControllerAdvice {
+
+    @ExceptionHandler(NoSuchElementException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public final ResponseEntity<ErrorResponseBody> notFoundException(final NoSuchElementException e) {
+        return new ResponseEntity<>(ErrorResponseBody.builder().code(HttpStatus.NOT_FOUND.value())
+                .status(HttpStatus.NOT_FOUND).msg("HTTP 404 Not Found").build(), HttpStatus.NOT_FOUND);
+    }
+
+}
+```
+##### Testing the exception handler
+There is one more thing left, test the solution, run the app and execute the same request.
+
+```json
+{
+    "code": 404,
+    "status": "NOT_FOUND",
+    "msg": "HTTP 404 Not Found",
+    "time": "2025-01-14T21:23:07.325270Z"
+}
+```
+As you can se our response is smaller and meaningful
+
+Now we need to add our exception handler for any kind of exception that can occur in our code.
+##### Validations
+In our `ProductDto.java` We've added aome annotations in order to validate our data before inserting or updating records in the DB
+```java
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+    @Size(min = 10, max = 255) // The lenght of the string must be from 10 to max 255 chars
+    @NotBlank(message = "description is mandatory")// Values like '' (empty strings are not allowed)
+    private String description;
+```
+If we break any of those rules it will throw an `MethodArgumentNotValidException` which will produce a 500 error response, the generic response of the framework, but we want to handle properly based on the standars for the client error responses, you can refer to the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status" target="_blank">docs here</a>.
+
+In this scenario we want to catch the exception and return a bad request response based on the docs.
+> __400 Bad Request__
+>
+> The server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing).
+
+Adding its own error handler to the Controller Advice will produce this
+```java
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public final ResponseEntity<ErrorResponseBody> notFoundException(final MethodArgumentNotValidException e) {
+        final var msg = String.join(", ", e.getAllErrors().stream().map(ObjectError::getDefaultMessage).toList());
+        return new ResponseEntity<>(ErrorResponseBody.builder().code(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST).msg(msg).build(), HttpStatus.BAD_REQUEST);
+    }
+```
+Then aftore the application restar we send a `POST` request to our service `http://localhost:8080/v1/product` with this body:
+```json
+{
+    "sku": "010101",
+    "productName": "Test product",
+    "description": "",// notice the empty string 
+    "price": 102.44,
+    "taxRate": 33.0
+}
+```
+
+And the result should be something like this:
+```json
+{
+    "code": 400,
+    "status": "BAD_REQUEST",
+    "msg": "description is mandatory, size must be between 10 and 255",
+    "time": "2025-01-14T21:47:51.353649Z"
+}
+```
+
+##### Generic errors
+We can't handle everything or knows all the possible exceptions in our code for that reason we need to add a generic type of handler for those unexpected errors and make from them standard error responses, by doing this we get the final version of our advice for now.
+
+```java
+package com.example.product.controllers;
+
+import java.util.NoSuchElementException;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.example.product.dtos.ErrorResponseBody;
+
+@RestControllerAdvice
+public class ProductControllerAdvice {
+
+    @ExceptionHandler(NoSuchElementException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public final ResponseEntity<ErrorResponseBody> notFoundException(final NoSuchElementException e) {
+        return new ResponseEntity<>(ErrorResponseBody.builder().code(HttpStatus.NOT_FOUND.value())
+                .status(HttpStatus.NOT_FOUND).msg("HTTP 404 Not Found").build(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public final ResponseEntity<ErrorResponseBody> badREquest(final MethodArgumentNotValidException e) {
+        final var msg = String.join(", ", e.getAllErrors().stream().map(ObjectError::getDefaultMessage).toList());
+        return new ResponseEntity<>(ErrorResponseBody.builder().code(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST).msg(msg).build(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(Throwable.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public final ResponseEntity<ErrorResponseBody> serverError(final Throwable e) {
+        return new ResponseEntity<>(ErrorResponseBody.builder().code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR).msg(e.getLocalizedMessage()).build(),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+}
+```
+##### Custom exceptions
+Using the `Throwable.java` class to catch any generic error would be a problem in the future because we will catch exceptions of any kind from anywhere, making it difficult to find the source of the issues, to cover this scenario we will add a custom exception to know when an exception related to our logic is thrown and when is a generic error coming from anywhere else.
+
+Create a new file and place it in this route `src/main/java/com/example/product/exceptions/ProductServiceGenericException.java`, add this code.
+```java
+package com.example.product.exceptions;
+
+public class ProductServiceGenericException extends RuntimeException {
+
+    public ProductServiceGenericException() {
+        super();
+    }
+
+    public ProductServiceGenericException(final Throwable error) {
+        super(error);
+    }
+
+    public ProductServiceGenericException(final String message) {
+        super(message);
+    }
+
+    public ProductServiceGenericException(final String message, final Throwable error) {
+        super(message, error);
+    }
+}
+```
+Then in the `ProductService.java` file, we need to add a try/catch block for each C.R.U.D.L. method like follows
+```java
+package com.example.product.services;
+
+import com.example.product.exceptions.ProductServiceGenericException;
+import com.example.product.models.Product;
+import com.example.product.repositories.ProductRepository;
+import lombok.Data;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+@Data
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    public Page<Product> all(final PageRequest pageRequest) {
+        try {
+            return productRepository.findAll(pageRequest);
+        } catch (Throwable e) {
+            throw new ProductServiceGenericException(e.getClass() + "  in service layer", e);
+        }
+    }
+
+    public Product get(final long id) {
+        try {
+            return productRepository.findById(id).orElseThrow();
+        } catch (Throwable e) {
+            throw new ProductServiceGenericException(e.getClass() + "  in service layer", e);
+        }
+    }
+
+    public Product save(final Product product) {
+        try {
+            return productRepository.save(product);
+        } catch (Throwable e) {
+            throw new ProductServiceGenericException(e.getClass() + "  in service layer", e);
+        }
+    }
+
+    public Product update(final long id, final Product product) {
+        try {
+            return productRepository.findById(id).map(existing -> {
+                product.setId(existing.getId());
+                return this.save(product);
+            }).orElseThrow();
+        } catch (Throwable e) {
+            throw new ProductServiceGenericException(e.getClass() + "  in service layer", e);
+        }
+    }
+
+    public void delete(final long id) {
+        try {
+            productRepository.deleteById(id);
+        } catch (Throwable e) {
+            throw new ProductServiceGenericException(e.getClass() + "  in service layer", e);
+        }
+    }
+}
+```
+In this way, any exception not handled by the controller advice should be treated as a `ProductServiceGenericException` allowing us to know that this exception occurred in any of the service methods.
+
+##### Example
+We will force the `all` method in the service layer to throw an arithmetic exception, then we will prove our error handler result.
+```java
+ public Page<Product> all(final PageRequest pageRequest) {
+        try {
+            var error = 1/0;
+            return productRepository.findAll(pageRequest);
+        } catch (Throwable e) {
+            throw new ProductServiceGenericException(e.getClass() + "  in service layer", e);
+        }
+    }
+```
+Restart the application and then hit the list request in postman, the result should be like this
+```json
+{
+    "code": 500,
+    "status": "INTERNAL_SERVER_ERROR",
+    "msg": "class java.lang.ArithmeticException  in service layer",
+    "time": "2025-01-15T02:49:40.316327Z"
+}
+```
+By doing this, we will improve quite a lot the way we handle application exceptions, allowing for better traceability of errors and run-time exceptions.

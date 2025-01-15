@@ -1,7 +1,5 @@
 package com.example.product.models;
 
-import java.math.BigInteger;
-
 import org.springframework.beans.BeanUtils;
 
 import com.example.product.dtos.ProductDto;
@@ -12,7 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
 import lombok.Data;
 
 @Data
