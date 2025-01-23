@@ -21,4 +21,3 @@ buildNumber.properties
 .vscode
 #RSA
 src/main/resources/certs/*
-JacksonConfig.java
