@@ -19,4 +19,6 @@ buildNumber.properties
 .idea
 # VSCode
 .vscode
-
+#RSA
+src/main/resources/certs/*
+JacksonConfig.java
