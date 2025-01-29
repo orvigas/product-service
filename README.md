@@ -1,6 +1,13 @@
 # Spring Boot 3.4.* product-service
 ###### Author: Orlando Villegas 2024
 This tutorial is about a Spring Boot 3.4.* based microservice. This time, we are going to create a simple "CRUD" microservice that will allow us to manage a database "product" table upon a Rest Controller that will contain Create, Read, Update, and Delete endpoints. We will also add a List operation with pagination, sorting, and filtering features.
+## Prerequisites
+Before starting this tutorial, we must meet a few requirements installed and configured in our development environment.
+- Java OpenJDK version "17.0.12" 2024-07-16 LTS or higher
+- Apache Maven 3.9.9 or higher
+- OpenSSL 3.4.0 22 Oct 2024 or higher
+- IntelliJ/Visual Studio Code/Spring Tool Suite/Eclipse
+- Postman Version 11.29.3 or higher
 ## Concept definitions
 Before starting, we need to define a few concepts to have a clear background about the things that we will work on within this project.
 ### Microservices
@@ -1558,3 +1565,830 @@ Restart the application and then hit the list request in postman, the result sho
 }
 ```
 By doing this, we will improve quite a lot the way we handle application exceptions, allowing for better traceability of errors and run-time exceptions.
+
+### Security Layer
+Web application security refers to various processes, technologies, and methods for protecting web servers, web applications, and web services, such as APIs, from threats posed by Internet-based attacks. Web application security is critical to protecting data, customers, and organizations from data theft, disruptions to business continuity, or other harmful consequences of cybercrime.
+#### Spring Security
+Spring Security is a powerful and highly customizable authentication and access-control framework. It is the de-facto standard for securing Spring-based applications.
+
+Spring Security is a framework that focuses on providing both authentication and authorization to Java applications. Like all Spring projects, the real power of Spring Security is found in how easily it can be extended to meet custom requirements
+
+__Features__
+- Comprehensive and extensible support for both Authentication and Authorization
+- Protection against attacks like session fixation, clickjacking, cross site request forgery, etc
+- Servlet API integration
+- Optional integration with Spring Web MVC
+- Much more <a hre="https://spring.io/projects/spring-security" target="_blank">here...</a>
+
+#### OAuth2
+OAuth 2.0, which stands for “Open Authorization”, is a standard designed to allow a website or application to access resources hosted by other web apps on behalf of a user. It replaced OAuth 1.0 in 2012 and is now the de facto industry standard for online authorization. OAuth 2.0 provides consented access and restricts actions of what the client app can perform on resources on behalf of the user, without ever sharing the user's credentials.
+
+Although the web is the main platform for OAuth 2, the specification also describes how to handle this kind of delegated access to other client types (browser-based applications, server-side web applications, native/mobile apps, connected devices, etc.), <a hre="https://auth0.com/intro-to-iam/what-is-oauth-2" target="_blank">docs here...</a>
+
+__Principles of OAuth2.0__
+- OAuth 2.0 is an authorization protocol and NOT an authentication protocol. As such, it is designed primarily as a means of granting access to a set of resources, for example, remote APIs or user data.
+
+- OAuth 2.0 uses Access Tokens. An Access Token is a piece of data that represents the authorization to access resources on behalf of the end-user. OAuth 2.0 doesn’t define a specific format for Access Tokens. However, in some contexts, the JSON Web Token (JWT) format is often used. This enables token issuers to include data in the token itself. Also, for security reasons, Access Tokens may have an expiration date.
+
+#### JSON Web Token (JWT)
+What is JSON Web Token?
+JSON Web Token (JWT) is an open standard (RFC 7519) that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. This information can be verified and trusted because it is digitally signed. JWTs can be signed using a secret (with the HMAC algorithm) or a public/private key pair using RSA or ECDSA.
+
+Although JWTs can be encrypted to also provide secrecy between parties, we will focus on signed tokens. Signed tokens can verify the integrity of the claims contained within it, while encrypted tokens hide those claims from other parties. When tokens are signed using public/private key pairs, the signature also certifies that only the party holding the private key is the one that signed it. <a hre="https://jwt.io/introduction" target="_blank">Docs here...</a>
+
+__When should you use JSON Web Tokens?__
+
+- __Authorization:__ This is the most common scenario for using JWT. Once the user is logged in, each subsequent request will include the JWT, allowing the user to access routes, services, and resources that are permitted with that token. Single Sign On is a feature that widely uses JWT nowadays, because of its small overhead and its ability to be easily used across different domains.
+
+- __Information Exchange:__ JSON Web Tokens are a good way of securely transmitting information between parties. Because JWTs can be signed—for example, using public/private key pairs—you can be sure the senders are who they say they are. Additionally, as the signature is calculated using the header and the payload, you can also verify that the content hasn't been tampered with.
+
+#### Adding security to our Product Service
+Let's start adding the security layer to our service, we need to include some new __Maven__ dependencies.
+
+##### Pom.xml
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
+</dependency>
+```
+
+###### User.java
+We need to create a neew entity to hold the data related to the users in our DB.
+```java
+
+package com.example.product.models;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.time.Instant;
+import java.util.Set;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+@Entity
+@Data
+@Table(name = "users")
+public class User implements UserDetails {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(nullable = false)
+    private String firstName;
+    @Column(nullable = false)
+    private String lastName;
+    @Column(nullable = false, unique = true)
+    private String username;
+    @Column(nullable = false)
+    private String password;
+    @Column(name = "created_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    @EqualsAndHashCode.Include
+    private Date createdAt;
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    @EqualsAndHashCode.Include
+    private Date updatedAt;
+    @Column(nullable = true, name = "deleted_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deletedAt;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
+    private Set<Role> roles = Collections.emptySet();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RefreshToken> refreshTokens = Collections.emptyList();
+
+    public Date getCreatedAt() {
+        if (createdAt == null) {
+            createdAt = Date.from(Instant.now());
+        }
+        return createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        if (updatedAt == null) {
+            updatedAt = getCreatedAt();
+        }
+        return updatedAt;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName())).toList();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+}
+```
+##### Role.java
+```java
+package com.example.product.models;
+
+import java.io.Serializable;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Data
+@Entity
+@Table(name = "roles")
+public class Role implements Serializable{
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+}
+```
+##### RefreshToken.java
+```java
+package com.example.product.models;
+
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.data.annotation.CreatedDate;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "refresh_tokens")
+public class RefreshToken implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(updatable = false, nullable = false)
+    private UUID id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(nullable = false, updatable = false)
+    @CreatedDate
+    private Instant createdAt;
+
+    @Column(nullable = false)
+    private Instant expiresAt;
+
+}
+```
+Let's continue adding our persistence and service layers.
+##### UserRepository.java
+```java
+package com.example.product.repositories;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.example.product.models.User;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+}
+```
+##### RoleRepository.java
+```java
+package com.example.product.repositories;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.example.product.models.Role;
+
+@Repository
+public interface RoleRepository extends JpaRepository<Role, Long> {
+}
+```
+##### RefreshTokenRepository.java
+```java
+package com.example.product.repositories;
+
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.example.product.models.RefreshToken;
+
+@Repository
+public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
+
+    Optional<RefreshToken> findByIdAndExpiresAtAfter(UUID id, Instant date);
+}
+```
+##### AuthService.java
+```java
+package com.example.product.services;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import com.example.product.models.RefreshToken;
+import com.example.product.repositories.RefreshTokenRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final TokenService tokenService;
+    private final AuthenticationManager manager;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    public Map<String, Object> authenticate(final Map<String, String> login) {
+        return tokenService.authorize(manager.authenticate(
+                new UsernamePasswordAuthenticationToken(login.get("username"), login.get("password"))));
+
+    }
+
+    public Map<String, Object> refreshToken(final UUID refreshToken) {
+
+        return refreshTokenRepository
+                .findByIdAndExpiresAtAfter(refreshToken, Instant.now()).map(RefreshToken::getUser).map(user -> {
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(new UsernamePasswordAuthenticationToken(user, null,
+                                    user.getAuthorities()));
+                    return tokenService
+                            .authorize(SecurityContextHolder.getContext().getAuthentication());
+                })
+                .orElseThrow();
+
+    }
+
+    public void revokeRefreshToken(final UUID refreshToken) {
+        refreshTokenRepository.deleteById(refreshToken);
+    }
+
+}
+```
+##### TokenService.java
+```java
+package com.example.product.services;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.stereotype.Service;
+
+import com.example.product.dtos.UserDto;
+import com.example.product.models.RefreshToken;
+import com.example.product.repositories.RefreshTokenRepository;
+import com.example.product.repositories.UserRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class TokenService {
+
+    @Value("${spring.application.name}")
+    private String appName;
+
+    private static final String TOKEN_TYPE = "Bearer";
+
+    private final ObjectMapper objectMapper;
+    private final JwtEncoder encoder;
+    private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    public Map<String, Object> authorize(final Authentication authentication) {
+
+        return userRepository.findByUsername(authentication.getName()).map(user -> {
+
+            final var userDto = objectMapper.convertValue(UserDto.from(user), new TypeReference<Map<String, Object>>() {});
+            final var now = Instant.now();
+            final var accessTokenExpiresIn = now.plus(12, ChronoUnit.HOURS);
+            final var refreshTokenExpiresIn = now.plus(7, ChronoUnit.DAYS);
+            final var claims = JwtClaimsSet.builder()
+                    .issuer(appName)
+                    .issuedAt(now)
+                    .expiresAt(accessTokenExpiresIn)
+                    .subject(authentication.getName())
+                    .claim("user_data", userDto)
+                    .build();
+
+            final var refreshToken = refreshTokenRepository
+                    .save(RefreshToken.builder().createdAt(now).expiresAt(refreshTokenExpiresIn).user(user).build());
+
+            final var result = new HashMap<String, Object>();
+            result.put("access_token", encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue());
+            result.put("token_type", TOKEN_TYPE);
+            result.put("expires_in", Duration.between(now, accessTokenExpiresIn));
+            result.put("refresh_token", refreshToken.getId());
+            return result;
+
+        }).orElseThrow();
+
+    }
+}
+```
+##### SecurityConfig.java
+```java
+package com.example.product.configurations;
+
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+import com.example.product.repositories.UserRepository;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.proc.SecurityContext;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Value("${rsa.private-key}")
+    RSAPrivateKey privateKey;
+    @Value("${rsa.public-key}")
+    RSAPublicKey publicKey;
+
+    @Bean
+    SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PathRequest.toH2Console()).permitAll()
+                        .requestMatchers("/v1/auth/**").permitAll()
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                .build();
+    }
+
+    @Bean
+    UserDetailsService userDetailsService(final UserRepository userRepository) {
+        return username -> userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User " + username + " not found!!"));
+    }
+
+    @Bean
+    JwtDecoder jwtDecoder() {
+        return NimbusJwtDecoder.withPublicKey(publicKey).build();
+    }
+
+    @Bean
+    JwtEncoder jwtEncoder() {
+        final var jwk = new RSAKey.Builder(publicKey).privateKey(privateKey).build();
+        final var jwks = new ImmutableJWKSet<SecurityContext>(new JWKSet(jwk));
+        return new NimbusJwtEncoder(jwks);
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+}
+```
+##### JacksonConfig.java
+```java
+package com.example.product.configurations;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+@Configuration
+@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
+public class JacksonConfig {
+
+@Bean
+@Primary
+public ObjectMapper objectMapper() {
+    JavaTimeModule module = new JavaTimeModule();
+    return new ObjectMapper()
+      .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+      .registerModule(module);
+}
+}
+```
+##### AuthController.java
+```java
+package com.example.product.controllers;
+
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.product.dtos.RefreshTokenRequest;
+import com.example.product.services.AuthService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/v1/auth")
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> login) {
+        return ResponseEntity.ok(authService.authenticate(login));
+    }
+
+    @PostMapping("/token/refresh")
+    public ResponseEntity<Map<String, Object>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        return ResponseEntity.ok(authService.refreshToken(refreshTokenRequest.getRefreshToken()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> revokeToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        authService.revokeRefreshToken(refreshTokenRequest.getRefreshToken());
+        return ResponseEntity.noContent().build();
+    }
+
+}
+```
+##### LoginRequest.java
+```java
+package com.example.product.dtos;
+
+import java.io.Serializable;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class LoginRequest implements Serializable {
+
+    @NotBlank(message = "The \"username\" field is mandatory")
+    private String username;
+    @NotBlank(message = "The \"password\" field is mandatory")
+    private String password;
+}
+```
+##### RefreshTokenRequest.java
+```java
+package com.example.product.dtos;
+
+import java.io.Serializable;
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class RefreshTokenRequest implements Serializable {
+    @JsonProperty("refresh_token")
+    @NotBlank(message = "The \"refresh_token\" field is mandatory")
+    private UUID refreshToken;
+}
+
+```
+##### UserDto.java
+```java
+package com.example.product.dtos;
+
+import java.io.Serializable;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.BeanUtils;
+
+import com.example.product.models.Role;
+import com.example.product.models.User;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
+public class UserDto implements Serializable {
+
+    private long id;
+    @Size(min = 2, max = 255)
+    @NotBlank(message = "The field \"firstName\" is mandatory")
+    private String firstName;
+    private String lastName;
+    @Pattern(regexp = "^[\\w\\.-]+@[\\w\\.-]+\\.\\w{2,4}$", message = "The field \"username\" must be a valid email")
+    @NotBlank(message = "The field \"username\" is mandatory")
+    private String username;
+
+    @Pattern(regexp = "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$", message = "The field \"password\" must be a valid password")
+    @NotBlank(message = "The field \"password\" is mandatory")
+    @JsonProperty(access = Access.WRITE_ONLY)
+    private String password;
+    private Set<String> roles;
+
+    public static UserDto from(final User user) {
+        if (user == null) {
+            return null;
+        }
+
+        final var instance = new UserDto();
+
+        BeanUtils.copyProperties(user, instance, "roles");
+        instance.setRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
+
+        return instance;
+    }
+
+}
+```
+##### ApplicationInitializer.java
+```java
+package com.example.product.configurations;
+
+import java.util.stream.Collectors;
+
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.example.product.dtos.UserDto;
+import com.example.product.models.User;
+import com.example.product.repositories.RoleRepository;
+import com.example.product.repositories.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Configuration
+class ApplicationInitializer {
+
+    @Bean
+    ApplicationRunner runner(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder encoder,
+            ObjectMapper objectMapper) {
+        return args -> {
+            User user = new User();
+            user.setFirstName("John");
+            user.setLastName("Doe");
+            user.setUsername("user@data.io");
+            user.setPassword(encoder.encode("P@assword123.0"));
+            user.setRoles(roleRepository.findAll().stream().collect(Collectors.toSet()));
+
+            var savedUser = UserDto.from(userRepository.save(user));
+            log.info("user: {}", objectMapper.writeValueAsString(savedUser));
+        };
+    }
+}
+
+```
+##### application.properties
+```properties
+spring.application.name=product-service
+
+#Spring datasource
+spring.datasource.url=jdbc:h2:mem:products
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+
+#JPA
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.defer-datasource-initialization=true
+
+#H2 DB
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-ui
+
+#LOGGIN
+logging.level.org.springframework.security=TRACE
+logging.level.org.springframework.jdbc=TRACE
+server.error.include-message=always
+
+#SSL
+# run these command in resources/certs directory
+# create rsa key pair
+# $ mkdir src/main/resources/certs
+# $ cd src/main/resources/certs
+# $ openssl genrsa -out keypair.pem 2048
+# extract public key
+# $ openssl rsa -in keypair.pem -pubout -out public.pem
+# create private key in PKCS#8 format
+# $ openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in keypair.pem -out private.pem
+rsa.private-key=classpath:certs/private.pem
+rsa.public-key=classpath:certs/public.pem
+
+```
+##### data.sql
+```sql
+--DROP TABLE if EXISTS products CASCADE;
+--DROP sequence if EXISTS products_seq;
+--CREATE sequence products_seq start WITH 1 increment by 50;
+--CREATE TABLE products (price float(53), tax_rate float(53), id bigint NOT NULL, description varchar(255), name varchar(255), sku varchar(255) UNIQUE, PRIMARY KEY (id));
+INSERT INTO roles (name) VALUES ('ROLE_ADMIN'), ('ROLE_USER');
+
+INSERT INTO products (sku,name,description,price,tax_rate)
+VALUES
+  ('08tT-21', 'T-Mobile MDA Compact V', 'pharetra magna ac consequat metus sapien ut nunc vestibulum ante ipsum primis in faucibus orci luctus', 1128.4, 33),
+('68DX-k4', 'LG W31', 'donec quis orci eget orci vehicula condimentum curabitur in libero ut massa volutpat convallis morbi odio', 2658.85, 92),
+('85ai-U8', 'Huawei Y560', 'sed vestibulum sit amet cursus id turpis integer aliquet massa id lobortis convallis tortor', 2602.8, 50),
+('69DG-G4', 'LG Optimus Net Dual', 'est congue elementum in hac habitasse platea dictumst morbi vestibulum velit id pretium iaculis diam erat fermentum justo', 1375.18, 37),
+('20Y5-s8', 'Emporia Elegance Plus', 'nulla tellus in sagittis dui vel nisl duis ac nibh fusce', 2818.21, 82),
+('295G-80', 'Micromax A50 Ninja', 'quis odio consequat varius integer ac leo pellentesque ultrices mattis odio donec vitae nisi nam ultrices libero non mattis', 2452.14, 91),
+('5109-M8', 'BlackBerry Pearl Flip 8220', 'posuere cubilia curae duis faucibus accumsan odio curabitur convallis duis consequat dui nec nisi volutpat eleifend donec ut dolor morbi', 890.1, 89),
+('93Kw-b7', 'Honor X10 5G', 'est phasellus sit amet erat nulla tempus vivamus in felis eu sapien cursus vestibulum proin eu mi nulla', 914.29, 28),
+('679B-B3', 'Allview P6 Energy Mini', 'imperdiet nullam orci pede venenatis non sodales sed tincidunt eu felis fusce posuere', 2815.04, 48),
+('61pD-T1', 'Huawei Mate 20 lite', 'blandit mi in porttitor pede justo eu massa donec dapibus duis at velit eu est', 1825.87, 81),
+('19yl-t5', 'LG V50S ThinQ 5G', 'suspendisse potenti cras in purus eu magna vulputate luctus cum sociis natoque penatibus et', 2099.21, 55),
+('408Z-70', 'Huawei P30 lite', 'ante nulla justo aliquam quis turpis eget elit sodales scelerisque mauris sit amet eros', 2411.72, 18),
+('80eH-94', 'Oppo Reno3', 'aliquet massa id lobortis convallis tortor risus dapibus augue vel accumsan tellus nisi eu orci mauris lacinia', 862.73, 27),
+('13uR-l7', 'LG GT365 Neon', 'suscipit nulla elit ac nulla sed vel enim sit amet nunc viverra dapibus nulla suscipit ligula in', 2293.54, 75),
+('21mo-k0', 'Xiaomi Redmi Note Prime', 'turpis nec euismod scelerisque quam turpis adipiscing lorem vitae mattis nibh ligula nec', 1772.12, 51),
+('36oE-y8', 'Philips W6350', 'ligula nec sem duis aliquam convallis nunc proin at turpis a pede posuere nonummy integer non velit donec diam neque', 1168.56, 62),
+('51YA-y6', 'Siemens SL10', 'vehicula consequat morbi a ipsum integer a nibh in quis justo maecenas rhoncus aliquam', 2803.84, 23),
+('79pB-z0', 'Sony D 2403', 'maecenas tristique est et tempus semper est quam pharetra magna ac consequat', 2977.89, 36),
+('70yy-b3', 'vivo Y51 (2020, September)', 'dignissim vestibulum vestibulum ante ipsum primis in faucibus orci luctus', 1951.63, 19),
+('61Nb-h9', 'alcatel OT-C507', 'sapien iaculis congue vivamus metus arcu adipiscing molestie hendrerit at vulputate vitae nisl aenean lectus pellentesque', 1510.66, 58),
+('47uf-z8', 'WND Wind Van Gogh 2100', 'mattis egestas metus aenean fermentum donec ut mauris eget massa tempor convallis nulla neque libero convallis eget eleifend luctus', 555.71, 99),
+('27EW-e4', 'Honor Play 3e', 'velit id pretium iaculis diam erat fermentum justo nec condimentum neque sapien placerat ante nulla', 690.95, 56),
+('66FH-H3', 'Samsung Galaxy Express Prime', 'cubilia curae donec pharetra magna vestibulum aliquet ultrices erat tortor sollicitudin mi sit amet lobortis sapien sapien non', 2287.13, 34),
+('98JO-a3', 'VK Mobile VK7000', 'non quam nec dui luctus rutrum nulla tellus in sagittis', 2262.05, 82),
+('86WP-d0', 'vivo S7', 'ut erat curabitur gravida nisi at nibh in hac habitasse platea dictumst aliquam augue', 2732.07, 11),
+('37bl-i2', 'BLU Energy X Plus 2', 'a nibh in quis justo maecenas rhoncus aliquam lacus morbi quis tortor id', 2577.47, 11),
+('38sq-c9', 'Asus Zenfone 2 Laser ZE500KG', 'nulla ac enim in tempor turpis nec euismod scelerisque quam turpis adipiscing lorem vitae', 2453.21, 4),
+('40s7-t8', 'Huawei P Smart Z', 'enim lorem ipsum dolor sit amet consectetuer adipiscing elit proin interdum mauris non ligula pellentesque ultrices', 2497.89, 60),
+('75ro-x7', 'HTC Touch Diamond2', 'in sapien iaculis congue vivamus metus arcu adipiscing molestie hendrerit at vulputate vitae', 1514.51, 23),
+('28EJ-X3', 'ZTE Blade 20 5G', 'id nulla ultrices aliquet maecenas leo odio condimentum id luctus nec molestie sed', 2385.74, 51),
+('24f4-k3', 'Motorola E380', 'aliquet ultrices erat tortor sollicitudin mi sit amet lobortis sapien sapien non mi', 2646.57, 58),
+('71Jl-16', 'Lava Pixel V1', 'est phasellus sit amet erat nulla tempus vivamus in felis eu sapien cursus vestibulum', 957.94, 81),
+('30Eb-U6', 'Gigabyte GSmart Guru (White Edition)', 'turpis elementum ligula vehicula consequat morbi a ipsum integer a nibh in quis justo maecenas rhoncus', 2509.92, 34),
+('73fP-g5', 'Huawei P40', 'tristique fusce congue diam id ornare imperdiet sapien urna pretium nisl', 1940.93, 5),
+('35qO-Z7', 'Acer Stream', 'nam nulla integer pede justo lacinia eget tincidunt eget tempus', 1521.19, 22),
+('42SD-u5', 'Samsung Galaxy mini 2 S6500', 'cubilia curae donec pharetra magna vestibulum aliquet ultrices erat tortor sollicitudin mi sit amet', 853.11, 49),
+('46iB-a3', 'LG Optimus L4 II Tri E470', 'cubilia curae nulla dapibus dolor vel est donec odio justo sollicitudin ut suscipit a', 2217.58, 34),
+('53GS-F0', 'vivo Y52s', 'rutrum ac lobortis vel dapibus at diam nam tristique tortor eu pede', 887.86, 9),
+('71BK-P5', 'Karbonn Titanium S19', 'sem praesent id massa id nisl venenatis lacinia aenean sit amet justo morbi ut odio', 992.78, 25),
+('10I8-I3', 'Apple Watch Series 2 38mm', 'leo odio porttitor id consequat in consequat ut nulla sed accumsan felis ut', 2796.94, 94),
+('30S6-g8', 'Sony Xperia XA1 Plus', 'id nulla ultrices aliquet maecenas leo odio condimentum id luctus nec molestie sed justo', 2940.01, 55),
+('86sN-N0', 'BenQ-Siemens C31', 'id massa id nisl venenatis lacinia aenean sit amet justo morbi ut odio cras mi pede', 1242.08, 26),
+('77Xn-t7', 'Acer Iconia Tab A3-A20', 'suspendisse potenti cras in purus eu magna vulputate luctus cum sociis natoque penatibus et magnis dis parturient', 2998.59, 3),
+('17TX-b4', 'ZTE Open C', 'in hac habitasse platea dictumst morbi vestibulum velit id pretium iaculis diam erat', 1633.28, 79),
+('84kP-76', 'Samsung A767 Propel', 'diam erat fermentum justo nec condimentum neque sapien placerat ante nulla justo aliquam quis turpis eget', 2450.72, 43),
+('98On-88', 'Sendo J520', 'dui luctus rutrum nulla tellus in sagittis dui vel nisl duis ac nibh fusce', 618.47, 55),
+('25QL-v4', 'Celkon C7010', 'viverra eget congue eget semper rutrum nulla nunc purus phasellus in felis donec semper sapien a libero', 1781.44, 70),
+('01n3-P5', 'Huawei Y7p', 'nulla elit ac nulla sed vel enim sit amet nunc viverra dapibus nulla suscipit ligula', 1661.94, 24),
+('73cl-G6', 'Sharp GX34', 'nisl aenean lectus pellentesque eget nunc donec quis orci eget orci vehicula condimentum curabitur in libero ut massa', 2486.76, 89),
+('27Em-E8', 'Samsung Galaxy A90 5G', 'magna at nunc commodo placerat praesent blandit nam nulla integer pede justo', 1580.35, 62),
+('98oU-o7', 'Nokia 3660', 'quam sollicitudin vitae consectetuer eget rutrum at lorem integer tincidunt ante vel ipsum praesent blandit lacinia', 2922.33, 24),
+('54Be-w0', 'Panasonic Eluga Ray 550', 'lacinia erat vestibulum sed magna at nunc commodo placerat praesent blandit nam nulla integer pede justo', 1923.04, 46),
+('03nI-h6', 'Nokia N97 mini', 'ut tellus nulla ut erat id mauris vulputate elementum nullam varius nulla facilisi cras non velit nec nisi', 2913.86, 69),
+('44LT-W1', 'Palm Treo Pro', 'nulla ultrices aliquet maecenas leo odio condimentum id luctus nec molestie sed justo', 2833.92, 21);
+```
+#### Testing our secured service
+
+<figure>
+    <img src="./readme-assets/filtered-list.png"
+         alt="A smaller set of records are returned">
+    <figcaption>Filtered result using the pagination configuration.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/filtered-list.png"
+         alt="A smaller set of records are returned">
+    <figcaption>Filtered result using the pagination configuration.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/filtered-list.png"
+         alt="A smaller set of records are returned">
+    <figcaption>Filtered result using the pagination configuration.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/filtered-list.png"
+         alt="A smaller set of records are returned">
+    <figcaption>Filtered result using the pagination configuration.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/filtered-list.png"
+         alt="A smaller set of records are returned">
+    <figcaption>Filtered result using the pagination configuration.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/filtered-list.png"
+         alt="A smaller set of records are returned">
+    <figcaption>Filtered result using the pagination configuration.</figcaption>
+</figure>
