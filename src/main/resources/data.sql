@@ -2,6 +2,7 @@
 --DROP sequence if EXISTS products_seq;
 --CREATE sequence products_seq start WITH 1 increment by 50;
 --CREATE TABLE products (price float(53), tax_rate float(53), id bigint NOT NULL, description varchar(255), name varchar(255), sku varchar(255) UNIQUE, PRIMARY KEY (id));
+INSERT INTO roles (name) VALUES ('ROLE_ADMIN'), ('ROLE_USER');
 
 INSERT INTO products (sku,name,description,price,tax_rate)
 VALUES
