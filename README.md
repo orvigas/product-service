@@ -2358,9 +2358,33 @@ VALUES
 #### Testing our secured service
 
 <figure>
+    <img src="./readme-assets/token.png"
+         alt="Login endpoint">
+    <figcaption>First of all, let's login.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/list-entire-result.png"
+         alt="Get endpoint">
+    <figcaption>Listing the records with a default pageSize and pageNumber.</figcaption>
+</figure>
+
+<figure>
     <img src="./readme-assets/filtered-list.png"
-         alt="A smaller set of records are returned">
-    <figcaption>Filtered result using the pagination configuration.</figcaption>
+         alt="Get endpoint using custong filter values">
+    <figcaption>Listing the records with a custom pageSize and pageNumber.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/create.png"
+         alt="Post endpoint">
+    <figcaption>Creating a record.</figcaption>
+</figure>
+
+<figure>
+    <img src="./readme-assets/update-reg.png"
+         alt="Put endpoint">
+    <figcaption>Updating a record</figcaption>
 </figure>
 
 <figure>
@@ -2369,26 +2393,27 @@ VALUES
     <figcaption>Filtered result using the pagination configuration.</figcaption>
 </figure>
 
-<figure>
-    <img src="./readme-assets/filtered-list.png"
-         alt="A smaller set of records are returned">
-    <figcaption>Filtered result using the pagination configuration.</figcaption>
-</figure>
+## Final Thoughts
+The product-service project demonstrates a well-structured and feature-rich implementation of a Spring Boot microservice. It incorporates essential concepts such as CRUD operations, pagination, DTO design patterns, error handling, and a robust security layer using OAuth2 and JWT. The project is a great example of how to build scalable, maintainable, and secure microservices while adhering to best practices in software development.
 
-<figure>
-    <img src="./readme-assets/filtered-list.png"
-         alt="A smaller set of records are returned">
-    <figcaption>Filtered result using the pagination configuration.</figcaption>
-</figure>
+The use of H2 as an in-memory database simplifies development and testing, while the inclusion of Postman collections and environment configurations makes API testing straightforward. Additionally, the implementation of global exception handling and custom error responses enhances the user experience by providing meaningful feedback to API consumers.
 
-<figure>
-    <img src="./readme-assets/filtered-list.png"
-         alt="A smaller set of records are returned">
-    <figcaption>Filtered result using the pagination configuration.</figcaption>
-</figure>
+## Conclusions
+1. Scalability and Maintainability: The modular architecture, use of DTOs, and separation of concerns between layers (Controller, Service, Repository) ensure that the application is easy to scale and maintain.
+2. Security: The integration of Spring Security with OAuth2 and JWT provides a robust authentication and authorization mechanism, ensuring that the application is secure.
+3. Error Handling: The implementation of a global exception handler improves the clarity and consistency of error responses, making the API more user-friendly.
+4. Testing and Documentation: The inclusion of Postman collections and detailed documentation in the README.md file ensures that the project is easy to understand, test, and extend.
 
-<figure>
-    <img src="./readme-assets/filtered-list.png"
-         alt="A smaller set of records are returned">
-    <figcaption>Filtered result using the pagination configuration.</figcaption>
-</figure>
+## Future Work
+1. Database Migration: Replace the H2 in-memory database with a production-grade database like PostgreSQL or MySQL, and integrate a migration tool like Flyway or Liquibase for schema management.
+2. API Documentation: Add Swagger/OpenAPI documentation to provide a user-friendly interface for exploring and testing the API.
+3. Unit and Integration Testing: Expand the test coverage by adding unit tests for services and integration tests for controllers to ensure the reliability of the application.
+4. Role-Based Access Control (RBAC): Enhance the security layer by implementing fine-grained role-based access control for different endpoints.
+5. Caching: Introduce caching mechanisms (e.g., Redis) to improve the performance of frequently accessed endpoints.
+6. Monitoring and Logging: Integrate monitoring tools like Prometheus and Grafana and use centralized logging solutions like ELK (Elasticsearch, Logstash, Kibana) for better observability.
+7. Asynchronous Processing: Implement asynchronous processing for long-running tasks using tools like Spring Boot's @Async or message queues like RabbitMQ or Kafka.
+8. Containerization: Dockerize the application and create a CI/CD pipeline for automated builds, tests, and deployments.
+9. Internationalization (i18n): Add support for multiple languages to make the application accessible to a broader audience.
+10. API Gateway: Introduce an API Gateway (e.g., Spring Cloud Gateway) to manage routing, load balancing, and authentication for multiple microservices.
+
+By addressing these future enhancements, the product-service can evolve into a more robust, scalable, and production-ready application.
